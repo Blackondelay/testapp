@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="theme-color" content="#0F172A">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>Nexus - SNS App</title>
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="icon.svg">
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Load Feather icons for icons -->
+    <script src="https://unpkg.com/feather-icons"></script>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar Navigation -->
+        <nav class="sidebar glass-panel">
+            <div class="logo">
+                <i data-feather="hexagon" class="logo-icon"></i>
+                <span>Nexus</span>
+            </div>
+            <ul class="nav-links">
+                <li class="nav-item active" data-view="home">
+                    <i data-feather="home"></i>
+                    <span>ホーム</span>
+                </li>
+                <li class="nav-item" data-view="profile">
+                    <i data-feather="user"></i>
+                    <span>プロフィール</span>
+                </li>
+            </ul>
+            <button class="btn-primary tweet-btn-nav" id="nav-tweet-btn">ポストする</button>
+            
+            <div class="current-user-mini">
+                <img src="" alt="avatar" class="avatar-small" id="nav-avatar">
+                <div class="user-info-mini">
+                    <div class="user-name-mini" id="nav-username">Name</div>
+                    <div class="user-handle-mini" id="nav-handle">@handle</div>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Main Content Area -->
+        <main class="main-content">
+            <!-- Home View -->
+            <section id="view-home" class="view-section active">
+                <header class="glass-header">
+                    <h2>ホーム</h2>
+                </header>
+                
+                <div class="compose-area glass-panel">
+                    <img src="" alt="avatar" class="avatar-medium" id="compose-avatar">
+                    <div class="compose-form">
+                        <textarea id="tweet-input" placeholder="いまどうしてる？" rows="2"></textarea>
+                        <div class="compose-actions">
+                            <span class="char-count" id="tweet-char-count">0/140</span>
+                            <button class="btn-primary" id="post-tweet-btn" disabled>ポスト</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="timeline" id="timeline">
+                    <!-- Tweets will be generated here -->
+                </div>
+            </section>
+
+            <!-- Profile View -->
+            <section id="view-profile" class="view-section">
+                <header class="glass-header">
+                    <i data-feather="arrow-left" class="back-btn" id="profile-back-btn"></i>
+                    <h2 id="header-profile-name">プロフィール</h2>
+                </header>
+                <div class="profile-header glass-panel">
+                    <div class="profile-cover"></div>
+                    <div class="profile-avatar-container">
+                        <img src="" alt="avatar" class="avatar-large" id="profile-avatar">
+                        <button class="btn-outline edit-profile-btn" id="edit-profile-btn">プロフィールを編集</button>
+                    </div>
+                    <div class="profile-details">
+                        <h3 class="profile-name" id="profile-name">Name</h3>
+                        <p class="profile-handle" id="profile-handle">@handle</p>
+                        <p class="profile-bio" id="profile-bio">Bio</p>
+                    </div>
+                </div>
+
+                <div class="profile-tabs">
+                    <div class="tab active">ポスト</div>
+                </div>
+                
+                <div class="timeline" id="profile-timeline">
+                    <!-- User's tweets will be generated here -->
+                </div>
+            </section>
+
+            <!-- Thread View (For showing a tweet and its replies) -->
+            <section id="view-thread" class="view-section">
+                <header class="glass-header">
+                    <i data-feather="arrow-left" class="back-btn" id="thread-back-btn"></i>
+                    <h2>ポスト</h2>
+                </header>
+                <div class="timeline" id="thread-main-tweet">
+                    <!-- Main Tweet -->
+                </div>
+                <div class="timeline" id="thread-replies">
+                    <!-- Replies -->
+                </div>
+            </section>
+        </main>
+
+        <!-- Right Sidebar (Trends/Suggestions placeholder) -->
+        <aside class="right-sidebar">
+            <div class="search-bar glass-panel">
+                <i data-feather="search"></i>
+                <input type="text" placeholder="Nexusを検索">
+            </div>
+            
+            <div class="trends glass-panel">
+                <h3>おすすめトレンド</h3>
+                <div class="trend-item">
+                    <span class="trend-category">テクノロジー</span>
+                    <span class="trend-name">#JavaScript</span>
+                    <span class="trend-count">12.5K ポスト</span>
+                </div>
+                <div class="trend-item">
+                    <span class="trend-category">デザイン</span>
+                    <span class="trend-name">グラスモーフィズム</span>
+                    <span class="trend-count">8.2K ポスト</span>
+                </div>
+            </div>
+        </aside>
+    </div>
+
+    <!-- Modals -->
+    <!-- Edit Profile Modal -->
+    <div class="modal-overlay" id="edit-profile-modal">
+        <div class="modal-content glass-panel">
+            <div class="modal-header">
+                <h3>プロフィールを編集</h3>
+                <button class="close-btn" id="close-profile-modal"><i data-feather="x"></i></button>
+            </div>
+            <div class="modal-body">
+                <div class="input-group">
+                    <label for="edit-name">名前</label>
+                    <input type="text" id="edit-name" maxlength="50">
+                </div>
+                <div class="input-group">
+                    <label for="edit-handle">ユーザーID</label>
+                    <div class="input-with-prefix">
+                        <span>@</span>
+                        <input type="text" id="edit-handle" maxlength="15">
+                    </div>
+                </div>
+                <div class="input-group">
+                    <label for="edit-bio">自己紹介</label>
+                    <textarea id="edit-bio" rows="3" maxlength="160"></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-primary" id="save-profile-btn">保存</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Reply Modal -->
+    <div class="modal-overlay" id="reply-modal">
+        <div class="modal-content glass-panel">
+            <div class="modal-header">
+                <h3>返信</h3>
+                <button class="close-btn" id="close-reply-modal"><i data-feather="x"></i></button>
+            </div>
+            <div class="modal-body">
+                <div class="reply-target" id="reply-target-content">
+                    <!-- Target tweet snippet will appear here -->
+                </div>
+                <div class="compose-area modal-compose">
+                    <img src="" alt="avatar" class="avatar-medium" id="reply-modal-avatar">
+                    <div class="compose-form">
+                        <textarea id="reply-input" placeholder="返信をポスト" rows="3"></textarea>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <span class="char-count" id="reply-char-count">0/140</span>
+                <button class="btn-primary" id="post-reply-btn" disabled>返信</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+    <script>
+      feather.replace()
+    </script>
+</body>
+</html>
