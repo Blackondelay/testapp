@@ -1,0 +1,52 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() { return request.auth != null; }
+
+    // ユーザープロフィール：ログイン中なら閲覧可、本人のみ作成・編集可（ユーザーIDは変更不可）
+    match /users/{uid} {
+      allow read: if signedIn();
+      allow create: if signedIn() && request.auth.uid == uid
+        && request.resource.data.username is string
+        && request.resource.data.username.size() > 0
+        && request.resource.data.username.size() <= 50
+        && request.resource.data.bio.size() <= 160;
+      allow update: if signedIn() && request.auth.uid == uid
+        && request.resource.data.handle == resource.data.handle
+        && request.resource.data.username.size() > 0
+        && request.resource.data.username.size() <= 50
+        && request.resource.data.bio.size() <= 160;
+    }
+
+    // ツイート
+    match /tweets/{tweetId} {
+      allow read: if signedIn();
+
+      // 投稿：本人名義のみ、140文字以内
+      allow create: if signedIn()
+        && request.resource.data.authorId == request.auth.uid
+        && request.resource.data.content is string
+        && request.resource.data.content.size() > 0
+        && request.resource.data.content.size() <= 140
+        && request.resource.data.likes.size() == 0
+        && request.resource.data.replyCount == 0;
+
+      // いいね：自分のIDの追加/削除のみ許可
+      function onlyOwnLikeChanged() {
+        let before = resource.data.likes.toSet();
+        let after = request.resource.data.likes.toSet();
+        return request.resource.data.diff(resource.data).affectedKeys().hasOnly(['likes'])
+          && after.difference(before).union(before.difference(after)).hasOnly([request.auth.uid]);
+      }
+
+      // リプライ数：+1 のみ許可
+      function replyCountIncremented() {
+        return request.resource.data.diff(resource.data).affectedKeys().hasOnly(['replyCount'])
+          && request.resource.data.replyCount == resource.data.replyCount + 1;
+      }
+
+      allow update: if signedIn() && (onlyOwnLikeChanged() || replyCountIncremented());
+    }
+  }
+}

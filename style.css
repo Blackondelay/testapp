@@ -706,3 +706,138 @@ button {
     .main-content { padding-bottom: calc(70px + env(safe-area-inset-bottom)); border-right: none; }
     .glass-header { padding-top: calc(1rem + env(safe-area-inset-top)); }
 }
+
+/* =============================================================
+   ログイン機能 / Firebase版 追加スタイル
+   ============================================================= */
+[hidden] { display: none !important; }
+
+/* インラインSVGアイコン */
+.icon { display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.icon svg { width: 100%; height: 100%; }
+.nav-item .icon { width: 28px; height: 28px; }
+.search-bar .icon { width: 20px; height: 20px; color: var(--text-muted); }
+.close-btn .icon { width: 22px; height: 22px; }
+.back-btn svg { width: 24px; height: 24px; }
+.action-btn svg {
+    width: 30px; height: 30px; padding: 6px; border-radius: 50%;
+    transition: background-color var(--transition-fast), transform 0.2s ease;
+}
+.action-btn.reply:hover svg { background-color: var(--reply-bg); }
+.action-btn.like:hover svg { background-color: var(--like-bg); }
+.action-btn.like.liked svg { fill: var(--like-color); }
+.action-btn.pop svg { animation: likePop 0.4s ease; }
+@keyframes likePop {
+    0% { transform: scale(1); }
+    40% { transform: scale(1.35); }
+    100% { transform: scale(1); }
+}
+#nav-logout:hover { color: var(--like-color); }
+
+/* スプラッシュ */
+.splash {
+    position: fixed; inset: 0; z-index: 3000;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1.5rem;
+    background: var(--bg-color);
+    transition: opacity 0.4s ease, visibility 0.4s ease;
+}
+.splash.hidden { opacity: 0; visibility: hidden; }
+.splash .logo-icon { width: 64px; height: 64px; animation: pulse 1.6s ease-in-out infinite; }
+.spinner {
+    width: 28px; height: 28px; border-radius: 50%;
+    border: 3px solid var(--surface-border); border-top-color: var(--accent-color);
+    animation: spin 0.8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+@keyframes pulse { 50% { opacity: 0.5; transform: scale(0.92); } }
+
+/* 認証画面 */
+.auth-screen {
+    min-height: 100vh; display: flex; align-items: center; justify-content: center;
+    padding: 1.5rem;
+}
+.auth-card {
+    width: 100%; max-width: 420px; padding: 2.5rem 2rem;
+    border-radius: 24px;
+    box-shadow: 0 30px 60px -15px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(139, 92, 246, 0.15);
+    animation: authIn 0.5s cubic-bezier(.2,.8,.2,1);
+}
+@keyframes authIn { from { opacity: 0; transform: translateY(16px) scale(0.98); } }
+.auth-logo { display: flex; align-items: center; justify-content: center; gap: 0.75rem; }
+.auth-logo .logo-icon { width: 44px; height: 44px; color: var(--accent-color); filter: drop-shadow(0 0 12px var(--accent-glow)); }
+.auth-logo h1 {
+    font-size: 2.2rem; letter-spacing: -0.03em;
+    background: linear-gradient(135deg, #fff, #C4B5FD);
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+}
+.auth-subtitle { text-align: center; color: var(--text-secondary); margin: 0.5rem 0 1.75rem; }
+.auth-tabs {
+    display: flex; background: rgba(15, 23, 42, 0.6); border-radius: var(--border-radius-pill);
+    padding: 4px; margin-bottom: 1.75rem; border: 1px solid var(--surface-border);
+}
+.auth-tab {
+    flex: 1; padding: 0.6rem; border-radius: var(--border-radius-pill);
+    color: var(--text-secondary); font-weight: 600; transition: all var(--transition-normal);
+}
+.auth-tab.active { background: var(--accent-color); color: #fff; box-shadow: 0 4px 14px var(--accent-glow); }
+.auth-form .input-group { margin-bottom: 1.1rem; }
+.auth-form .register-only { display: none; }
+.auth-form.register .register-only { display: block; animation: fadeIn var(--transition-normal); }
+.auth-error { color: var(--like-color); font-size: 0.875rem; min-height: 1.3em; margin-bottom: 0.75rem; }
+.auth-submit { width: 100%; padding: 0.85rem; font-size: 1rem; box-shadow: 0 6px 20px var(--accent-glow); }
+
+/* オフラインバッジ */
+.offline-badge {
+    position: fixed; top: 12px; left: 50%; z-index: 2000;
+    transform: translate(-50%, -150%);
+    display: flex; align-items: center; gap: 0.5rem;
+    padding: 0.5rem 1rem; border-radius: var(--border-radius-pill);
+    background: rgba(245, 158, 11, 0.15); color: #FCD34D;
+    border: 1px solid rgba(245, 158, 11, 0.4); backdrop-filter: blur(12px);
+    font-size: 0.85rem; font-weight: 500;
+    transition: transform var(--transition-normal);
+}
+.offline-badge.show { transform: translate(-50%, 0); }
+.offline-badge .icon { width: 16px; height: 16px; }
+
+/* トースト */
+.toast {
+    position: fixed; bottom: 24px; left: 50%; z-index: 2000;
+    transform: translate(-50%, 150%); opacity: 0;
+    padding: 0.75rem 1.25rem; border-radius: var(--border-radius-pill);
+    background: var(--accent-color); color: #fff; font-weight: 500;
+    box-shadow: 0 10px 30px var(--accent-glow);
+    transition: transform var(--transition-normal), opacity var(--transition-normal);
+}
+.toast.show { transform: translate(-50%, 0); opacity: 1; }
+
+/* ツイート補助 */
+.tweet { animation: fadeIn var(--transition-normal); }
+.tweet.thread-main { cursor: default; border-bottom-width: 2px; }
+.tweet.thread-main .tweet-text { font-size: 1.2rem; }
+.tweet.pending { opacity: 0.7; }
+.pending-badge { width: 14px; height: 14px; color: #FCD34D; display: inline-flex; }
+.pending-badge svg { width: 100%; height: 100%; }
+[data-user-link] { cursor: pointer; }
+.tweet-name[data-user-link]:hover { text-decoration: underline; }
+.reply-to { color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 0.25rem; }
+.reply-to span { color: var(--accent-color); }
+.empty { text-align: center; color: var(--text-muted); padding: 3rem 1.5rem; }
+.empty.small { padding: 1rem; font-size: 0.9rem; }
+
+/* ユーザー一覧 */
+.user-item { flex-direction: row; align-items: center; gap: 0.75rem; }
+.user-item-info { display: flex; flex-direction: column; min-width: 0; }
+.user-item-info .trend-name { margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.user-item-info small { color: var(--text-muted); font-weight: 400; }
+#user-list { max-height: 60vh; overflow-y: auto; }
+
+.profile-stats { color: var(--text-secondary); margin-top: 0.75rem; font-size: 0.9rem; }
+.profile-stats b { color: var(--text-primary); }
+.hint { color: var(--text-muted); font-size: 0.8rem; }
+
+@media (max-width: 500px) {
+    .toast { bottom: calc(80px + env(safe-area-inset-bottom)); }
+    .auth-card { padding: 2rem 1.25rem; }
+}
+

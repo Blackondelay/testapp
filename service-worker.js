@@ -1,68 +1,49 @@
-const CACHE_NAME = 'nexus-cache-v1';
-const urlsToCache = [
+// アプリ本体と Firebase SDK をキャッシュし、オフラインでも起動できるようにする
+const CACHE_NAME = 'nexus-cache-v2';
+const FIREBASE_VER = '10.12.2';
+const APP_SHELL = [
     './',
     './index.html',
     './style.css',
     './app.js',
+    './firebase-config.js',
     './manifest.json',
     './icon.svg',
-    'https://unpkg.com/feather-icons'
+    `https://www.gstatic.com/firebasejs/${FIREBASE_VER}/firebase-app.js`,
+    `https://www.gstatic.com/firebasejs/${FIREBASE_VER}/firebase-auth.js`,
+    `https://www.gstatic.com/firebasejs/${FIREBASE_VER}/firebase-firestore.js`
 ];
 
-// Install event: cache resources
-self.addEventListener('install', event => {
-    event.waitUntil(
-        caches.open(CACHE_NAME)
-            .then(cache => {
-                return cache.addAll(urlsToCache);
-            })
-    );
+self.addEventListener('install', (event) => {
+    event.waitUntil(caches.open(CACHE_NAME).then(c => c.addAll(APP_SHELL)));
+    self.skipWaiting();
 });
 
-// Fetch event: serve from cache or network
-self.addEventListener('fetch', event => {
-    if (event.request.method !== 'GET') return;
+self.addEventListener('activate', (event) => {
+    event.waitUntil(
+        caches.keys().then(keys => Promise.all(keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k))))
+    );
+    self.clients.claim();
+});
 
+// 自サイトのファイル & Firebase SDK のみ扱う（Firestore/Auth の通信はSDKに任せる）
+self.addEventListener('fetch', (event) => {
+    const req = event.request;
+    if (req.method !== 'GET') return;
+    const url = new URL(req.url);
+    const isSelf = url.origin === self.location.origin;
+    const isSdk = url.hostname === 'www.gstatic.com' && url.pathname.startsWith('/firebasejs/');
+    if (!isSelf && !isSdk) return;
+
+    // Stale-While-Revalidate：キャッシュを即返しつつ、裏で最新版に更新
     event.respondWith(
-        caches.match(event.request)
-            .then(response => {
-                if (response) {
-                    return response;
-                }
-                return fetch(event.request).then(
-                    function(response) {
-                        if(!response || response.status !== 200 || response.type !== 'basic') {
-                            return response;
-                        }
-                        var responseToCache = response.clone();
-                        caches.open(CACHE_NAME)
-                            .then(function(cache) {
-                                if(event.request.url.startsWith(self.location.origin) || 
-                                   event.request.url.includes('unpkg.com') ||
-                                   event.request.url.includes('fonts.googleapis.com') ||
-                                   event.request.url.includes('ui-avatars.com')) {
-                                    cache.put(event.request, responseToCache);
-                                }
-                            });
-                        return response;
-                    }
-                );
-            })
-    );
-});
-
-// Activate event: clean up old caches
-self.addEventListener('activate', event => {
-    const cacheWhitelist = [CACHE_NAME];
-    event.waitUntil(
-        caches.keys().then(cacheNames => {
-            return Promise.all(
-                cacheNames.map(cacheName => {
-                    if (cacheWhitelist.indexOf(cacheName) === -1) {
-                        return caches.delete(cacheName);
-                    }
-                })
-            );
+        caches.open(CACHE_NAME).then(async (cache) => {
+            const cached = await cache.match(req, { ignoreSearch: isSelf });
+            const network = fetch(req).then(res => {
+                if (res && res.ok) cache.put(req, res.clone());
+                return res;
+            }).catch(() => cached || (req.mode === 'navigate' ? cache.match('./index.html') : undefined));
+            return cached || network;
         })
     );
 });

@@ -4,55 +4,102 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="theme-color" content="#0F172A">
+    <meta name="description" content="Nexus - 仲間とつながる、オフラインでも使えるSNS">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>Nexus - SNS App</title>
     <link rel="manifest" href="manifest.json">
+    <link rel="icon" href="icon.svg" type="image/svg+xml">
     <link rel="apple-touch-icon" href="icon.svg">
     <link rel="stylesheet" href="style.css">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <!-- Load Feather icons for icons -->
-    <script src="https://unpkg.com/feather-icons"></script>
 </head>
 <body>
-    <div class="app-container">
-        <!-- Sidebar Navigation -->
+    <!-- 起動中ローディング -->
+    <div class="splash" id="splash">
+        <span class="icon logo-icon" data-icon="hexagon"></span>
+        <div class="spinner"></div>
+    </div>
+
+    <!-- オフラインバッジ -->
+    <div class="offline-badge" id="offline-badge">
+        <span class="icon" data-icon="wifiOff"></span>
+        オフライン中 — 投稿は接続時に自動送信されます
+    </div>
+
+    <!-- ===== 認証画面 ===== -->
+    <section class="auth-screen" id="auth-screen" hidden>
+        <div class="auth-card glass-panel">
+            <div class="auth-logo">
+                <span class="icon logo-icon" data-icon="hexagon"></span>
+                <h1>Nexus</h1>
+            </div>
+            <p class="auth-subtitle">仲間とつながろう。</p>
+
+            <div class="auth-tabs">
+                <button class="auth-tab active" data-mode="login" id="tab-login">ログイン</button>
+                <button class="auth-tab" data-mode="register" id="tab-register">新規登録</button>
+            </div>
+
+            <form id="auth-form" class="auth-form" novalidate>
+                <div class="input-group register-only">
+                    <label for="auth-name">表示名</label>
+                    <input type="text" id="auth-name" maxlength="50" placeholder="例：山田太郎" autocomplete="nickname">
+                </div>
+                <div class="input-group">
+                    <label for="auth-handle">ユーザーID</label>
+                    <div class="input-with-prefix">
+                        <span>@</span>
+                        <input type="text" id="auth-handle" maxlength="15" placeholder="半角英数字と_（3〜15文字）" autocomplete="username" required>
+                    </div>
+                </div>
+                <div class="input-group">
+                    <label for="auth-password">パスワード</label>
+                    <input type="password" id="auth-password" placeholder="6文字以上" autocomplete="current-password" required>
+                </div>
+                <p class="auth-error" id="auth-error" role="alert"></p>
+                <button type="submit" class="btn-primary auth-submit" id="auth-submit">ログイン</button>
+            </form>
+        </div>
+    </section>
+
+    <!-- ===== メインアプリ ===== -->
+    <div class="app-container" id="app" hidden>
         <nav class="sidebar glass-panel">
             <div class="logo">
-                <i data-feather="hexagon" class="logo-icon"></i>
+                <span class="icon logo-icon" data-icon="hexagon"></span>
                 <span>Nexus</span>
             </div>
             <ul class="nav-links">
-                <li class="nav-item active" data-view="home">
-                    <i data-feather="home"></i>
+                <li class="nav-item active" data-view="home" id="nav-home">
+                    <span class="icon" data-icon="home"></span>
                     <span>ホーム</span>
                 </li>
-                <li class="nav-item" data-view="profile">
-                    <i data-feather="user"></i>
+                <li class="nav-item" data-view="profile" id="nav-profile">
+                    <span class="icon" data-icon="user"></span>
                     <span>プロフィール</span>
+                </li>
+                <li class="nav-item" id="nav-logout">
+                    <span class="icon" data-icon="logout"></span>
+                    <span>ログアウト</span>
                 </li>
             </ul>
             <button class="btn-primary tweet-btn-nav" id="nav-tweet-btn">ポストする</button>
-            
-            <div class="current-user-mini">
+
+            <div class="current-user-mini" id="nav-user">
                 <img src="" alt="avatar" class="avatar-small" id="nav-avatar">
                 <div class="user-info-mini">
-                    <div class="user-name-mini" id="nav-username">Name</div>
-                    <div class="user-handle-mini" id="nav-handle">@handle</div>
+                    <div class="user-name-mini" id="nav-username"></div>
+                    <div class="user-handle-mini" id="nav-handle"></div>
                 </div>
             </div>
         </nav>
 
-        <!-- Main Content Area -->
         <main class="main-content">
-            <!-- Home View -->
+            <!-- ホーム -->
             <section id="view-home" class="view-section active">
                 <header class="glass-header">
                     <h2>ホーム</h2>
                 </header>
-                
                 <div class="compose-area glass-panel">
                     <img src="" alt="avatar" class="avatar-medium" id="compose-avatar">
                     <div class="compose-form">
@@ -63,16 +110,13 @@
                         </div>
                     </div>
                 </div>
-
-                <div class="timeline" id="timeline">
-                    <!-- Tweets will be generated here -->
-                </div>
+                <div class="timeline" id="timeline"></div>
             </section>
 
-            <!-- Profile View -->
+            <!-- プロフィール -->
             <section id="view-profile" class="view-section">
                 <header class="glass-header">
-                    <i data-feather="arrow-left" class="back-btn" id="profile-back-btn"></i>
+                    <span class="icon back-btn" data-icon="arrowLeft" id="profile-back-btn"></span>
                     <h2 id="header-profile-name">プロフィール</h2>
                 </header>
                 <div class="profile-header glass-panel">
@@ -82,66 +126,47 @@
                         <button class="btn-outline edit-profile-btn" id="edit-profile-btn">プロフィールを編集</button>
                     </div>
                     <div class="profile-details">
-                        <h3 class="profile-name" id="profile-name">Name</h3>
-                        <p class="profile-handle" id="profile-handle">@handle</p>
-                        <p class="profile-bio" id="profile-bio">Bio</p>
+                        <h3 class="profile-name" id="profile-name"></h3>
+                        <p class="profile-handle" id="profile-handle"></p>
+                        <p class="profile-bio" id="profile-bio"></p>
+                        <p class="profile-stats" id="profile-stats"></p>
                     </div>
                 </div>
-
                 <div class="profile-tabs">
                     <div class="tab active">ポスト</div>
                 </div>
-                
-                <div class="timeline" id="profile-timeline">
-                    <!-- User's tweets will be generated here -->
-                </div>
+                <div class="timeline" id="profile-timeline"></div>
             </section>
 
-            <!-- Thread View (For showing a tweet and its replies) -->
+            <!-- スレッド -->
             <section id="view-thread" class="view-section">
                 <header class="glass-header">
-                    <i data-feather="arrow-left" class="back-btn" id="thread-back-btn"></i>
+                    <span class="icon back-btn" data-icon="arrowLeft" id="thread-back-btn"></span>
                     <h2>ポスト</h2>
                 </header>
-                <div class="timeline" id="thread-main-tweet">
-                    <!-- Main Tweet -->
-                </div>
-                <div class="timeline" id="thread-replies">
-                    <!-- Replies -->
-                </div>
+                <div class="timeline" id="thread-main-tweet"></div>
+                <div class="timeline" id="thread-replies"></div>
             </section>
         </main>
 
-        <!-- Right Sidebar (Trends/Suggestions placeholder) -->
         <aside class="right-sidebar">
             <div class="search-bar glass-panel">
-                <i data-feather="search"></i>
-                <input type="text" placeholder="Nexusを検索">
+                <span class="icon" data-icon="search"></span>
+                <input type="text" id="search-input" placeholder="Nexusを検索">
             </div>
-            
             <div class="trends glass-panel">
-                <h3>おすすめトレンド</h3>
-                <div class="trend-item">
-                    <span class="trend-category">テクノロジー</span>
-                    <span class="trend-name">#JavaScript</span>
-                    <span class="trend-count">12.5K ポスト</span>
-                </div>
-                <div class="trend-item">
-                    <span class="trend-category">デザイン</span>
-                    <span class="trend-name">グラスモーフィズム</span>
-                    <span class="trend-count">8.2K ポスト</span>
-                </div>
+                <h3>ユーザー</h3>
+                <div id="user-list"></div>
             </div>
         </aside>
     </div>
 
-    <!-- Modals -->
-    <!-- Edit Profile Modal -->
+    <!-- プロフィール編集モーダル -->
     <div class="modal-overlay" id="edit-profile-modal">
         <div class="modal-content glass-panel">
             <div class="modal-header">
                 <h3>プロフィールを編集</h3>
-                <button class="close-btn" id="close-profile-modal"><i data-feather="x"></i></button>
+                <button class="close-btn" id="close-profile-modal"><span class="icon" data-icon="x"></span></button>
             </div>
             <div class="modal-body">
                 <div class="input-group">
@@ -149,16 +174,10 @@
                     <input type="text" id="edit-name" maxlength="50">
                 </div>
                 <div class="input-group">
-                    <label for="edit-handle">ユーザーID</label>
-                    <div class="input-with-prefix">
-                        <span>@</span>
-                        <input type="text" id="edit-handle" maxlength="15">
-                    </div>
-                </div>
-                <div class="input-group">
                     <label for="edit-bio">自己紹介</label>
                     <textarea id="edit-bio" rows="3" maxlength="160"></textarea>
                 </div>
+                <p class="hint">※ ユーザーIDはログインに使うため変更できません。</p>
             </div>
             <div class="modal-footer">
                 <button class="btn-primary" id="save-profile-btn">保存</button>
@@ -166,17 +185,15 @@
         </div>
     </div>
 
-    <!-- Reply Modal -->
+    <!-- 返信モーダル -->
     <div class="modal-overlay" id="reply-modal">
         <div class="modal-content glass-panel">
             <div class="modal-header">
                 <h3>返信</h3>
-                <button class="close-btn" id="close-reply-modal"><i data-feather="x"></i></button>
+                <button class="close-btn" id="close-reply-modal"><span class="icon" data-icon="x"></span></button>
             </div>
             <div class="modal-body">
-                <div class="reply-target" id="reply-target-content">
-                    <!-- Target tweet snippet will appear here -->
-                </div>
+                <div class="reply-target" id="reply-target-content"></div>
                 <div class="compose-area modal-compose">
                     <img src="" alt="avatar" class="avatar-medium" id="reply-modal-avatar">
                     <div class="compose-form">
@@ -191,9 +208,29 @@
         </div>
     </div>
 
-    <script src="app.js"></script>
+    <div class="toast" id="toast"></div>
+
+    <script type="module" src="app.js"></script>
     <script>
-      feather.replace()
+        // 起動できない場合に、読み込み中のまま止まらず原因を表示する
+        (function () {
+            function showError(msg) {
+                var s = document.getElementById('splash');
+                if (!s || s.classList.contains('hidden')) return;
+                s.innerHTML = '<div style="max-width:420px;padding:24px;text-align:center;line-height:1.8">'
+                    + '<h2 style="margin-bottom:12px">アプリを起動できません</h2>' + msg + '</div>';
+            }
+            if (location.protocol === 'file:') {
+                showError('<p>index.html をダブルクリックで開くと動作しません。</p>'
+                    + '<p>公開URL（https://〜）から開くか、VS Code の <b>Live Server</b> で開いてください。</p>');
+                return;
+            }
+            setTimeout(function () {
+                showError('<p>読み込みに時間がかかっています。</p>'
+                    + '<p>初回起動時はインターネット接続が必要です。接続を確認して再読み込みしてください。</p>'
+                    + '<button class="btn-primary" style="margin-top:16px" onclick="location.reload()">再読み込み</button>');
+            }, 15000);
+        })();
     </script>
 </body>
 </html>

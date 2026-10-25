@@ -1,0 +1,5 @@
+# このアプリと関係のないフォルダ・生成物
+nutritrack/
+nexus-deploy.zip
+node_modules/
+.firebase/
