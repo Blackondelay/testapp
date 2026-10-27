@@ -133,7 +133,8 @@
                     </div>
                 </div>
                 <div class="profile-tabs">
-                    <div class="tab active">ポスト</div>
+                    <div class="tab active" data-tab="posts" id="tab-posts">ポスト</div>
+                    <div class="tab" data-tab="likes" id="tab-likes">いいね</div>
                 </div>
                 <div class="timeline" id="profile-timeline"></div>
             </section>
@@ -169,6 +170,17 @@
                 <button class="close-btn" id="close-profile-modal"><span class="icon" data-icon="x"></span></button>
             </div>
             <div class="modal-body">
+                <div class="avatar-editor">
+                    <label class="avatar-picker" for="edit-avatar-file" title="画像を変更">
+                        <img src="" alt="プロフィール画像" class="avatar-large" id="edit-avatar-preview">
+                        <span class="avatar-picker-overlay"><span class="icon" data-icon="camera"></span></span>
+                    </label>
+                    <input type="file" id="edit-avatar-file" accept="image/*" hidden>
+                    <div class="avatar-editor-actions">
+                        <label for="edit-avatar-file" class="btn-outline">画像を選択</label>
+                        <button type="button" class="btn-outline" id="edit-avatar-remove">画像を削除</button>
+                    </div>
+                </div>
                 <div class="input-group">
                     <label for="edit-name">名前</label>
                     <input type="text" id="edit-name" maxlength="50">

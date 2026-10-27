@@ -4,6 +4,13 @@ service cloud.firestore {
 
     function signedIn() { return request.auth != null; }
 
+    // プロフィール画像：未設定・空文字（削除）・200KB未満の画像dataURLのみ許可
+    function validAvatar() {
+      let d = request.resource.data;
+      return !('avatar' in d) || d.avatar == ''
+        || (d.avatar is string && d.avatar.size() < 200000 && d.avatar.matches('^data:image/(jpeg|png|webp);base64,.*'));
+    }
+
     // ユーザープロフィール：ログイン中なら閲覧可、本人のみ作成・編集可（ユーザーIDは変更不可）
     match /users/{uid} {
       allow read: if signedIn();
@@ -11,12 +18,14 @@ service cloud.firestore {
         && request.resource.data.username is string
         && request.resource.data.username.size() > 0
         && request.resource.data.username.size() <= 50
-        && request.resource.data.bio.size() <= 160;
+        && request.resource.data.bio.size() <= 160
+        && validAvatar();
       allow update: if signedIn() && request.auth.uid == uid
         && request.resource.data.handle == resource.data.handle
         && request.resource.data.username.size() > 0
         && request.resource.data.username.size() <= 50
-        && request.resource.data.bio.size() <= 160;
+        && request.resource.data.bio.size() <= 160
+        && validAvatar();
     }
 
     // ツイート

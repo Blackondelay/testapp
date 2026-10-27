@@ -1,5 +1,5 @@
 // アプリ本体と Firebase SDK をキャッシュし、オフラインでも起動できるようにする
-const CACHE_NAME = 'nexus-cache-v2';
+const CACHE_NAME = 'nexus-cache-v3';
 const FIREBASE_VER = '10.12.2';
 const APP_SHELL = [
     './',

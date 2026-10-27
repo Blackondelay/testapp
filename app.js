@@ -39,7 +39,8 @@ const ICON_PATHS = {
     heart: '<path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>',
     message: '<path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/>',
     wifiOff: '<line x1="1" y1="1" x2="23" y2="23"/><path d="M16.72 11.06A10.94 10.94 0 0 1 19 12.55"/><path d="M5 12.55a10.94 10.94 0 0 1 5.17-2.39"/><path d="M10.71 5.05A16 16 0 0 1 22.58 9"/><path d="M1.42 9a15.91 15.91 0 0 1 4.7-2.88"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><line x1="12" y1="20" x2="12.01" y2="20"/>',
-    clock: '<circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>'
+    clock: '<circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>',
+    camera: '<path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/>'
 };
 const icon = (name) =>
     `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${ICON_PATHS[name] || ''}</svg>`;
@@ -69,6 +70,26 @@ const makeAvatar = (name = '?', seed = '') => {
     avatarCache.set(key, url);
     return url;
 };
+
+// 画像を中央で正方形に切り抜き、指定サイズのJPEG(dataURL)に縮小する
+// （Firestoreに直接保存するため 256px・約20〜40KB に抑える）
+const resizeImage = (file, size) => new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => {
+        const s = Math.min(img.width, img.height);
+        const canvas = document.createElement('canvas');
+        canvas.width = canvas.height = size;
+        const ctx = canvas.getContext('2d');
+        ctx.fillStyle = '#fff';
+        ctx.fillRect(0, 0, size, size); // 透過PNGの背景を白に
+        ctx.drawImage(img, (img.width - s) / 2, (img.height - s) / 2, s, s, 0, 0, size, size);
+        URL.revokeObjectURL(url);
+        resolve(canvas.toDataURL('image/jpeg', 0.85));
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('image load failed')); };
+    img.src = url;
+});
 
 const formatDate = (date) => {
     if (!date) return '';
@@ -103,6 +124,7 @@ class App {
         this.unsubs = [];
         this.view = 'home';
         this.profileUid = null;
+        this.profileTab = 'posts';    // プロフィールのタブ（posts / likes）
         this.threadId = null;
         this.replyTargetId = null;
         this.authMode = 'login';
@@ -246,7 +268,8 @@ class App {
             || (uid === this.me?.uid && this.pendingProfile)
             || (uid === this.me?.uid && { username: this.me.email.split('@')[0], handle: this.me.email.split('@')[0], bio: '' })
             || { username: '不明なユーザー', handle: 'unknown', bio: '' };
-        return { ...u, avatar: makeAvatar(u.username, uid) };
+        // アップロード画像があればそれを、無ければイニシャルアバターを使う
+        return { ...u, avatar: u.avatar || makeAvatar(u.username, uid) };
     }
 
     updateMyUI() {
@@ -286,6 +309,14 @@ class App {
 
         // プロフィール編集
         $('edit-profile-btn').addEventListener('click', () => this.openEditProfile());
+        $('edit-avatar-file').addEventListener('change', (e) => this.onAvatarSelected(e.target.files[0]));
+        $('edit-avatar-remove').addEventListener('click', () => {
+            this.editAvatar = '';
+            const me = this.getUser(this.me.uid);
+            $('edit-avatar-preview').src = makeAvatar($('edit-name').value.trim() || me.username, this.me.uid);
+        });
+        document.querySelectorAll('.profile-tabs .tab').forEach(tab =>
+            tab.addEventListener('click', () => { this.profileTab = tab.dataset.tab; this.renderProfile(); }));
         $('close-profile-modal').addEventListener('click', () => this.closeModals());
         $('save-profile-btn').addEventListener('click', () => this.saveProfile());
 
@@ -351,6 +382,7 @@ class App {
     }
 
     switchView(view) {
+        if (view === 'profile') this.profileTab = 'posts';
         this.view = view;
         document.querySelectorAll('.nav-item[data-view]').forEach(item =>
             item.classList.toggle('active',
@@ -463,9 +495,14 @@ class App {
         $('profile-bio').textContent = u.bio || '';
         $('edit-profile-btn').style.visibility = isMe ? 'visible' : 'hidden';
         const mine = this.tweets.filter(t => t.authorId === uid);
+        const liked = this.tweets.filter(t => (t.likes || []).includes(uid));
         const likesGot = mine.reduce((s, t) => s + (t.likes?.length || 0), 0);
-        $('profile-stats').innerHTML = `<b>${mine.length}</b> ポスト　<b>${likesGot}</b> いいね獲得`;
-        $('profile-timeline').innerHTML = this.listHTML(mine, 'まだポストがありません。');
+        $('profile-stats').innerHTML = `<b>${mine.length}</b> ポスト　<b>${liked.length}</b> いいね済み　<b>${likesGot}</b> いいね獲得`;
+        document.querySelectorAll('.profile-tabs .tab').forEach(t =>
+            t.classList.toggle('active', t.dataset.tab === this.profileTab));
+        $('profile-timeline').innerHTML = this.profileTab === 'likes'
+            ? this.listHTML(liked, isMe ? 'まだいいねしたポストはありません。' : 'いいねしたポストはありません。')
+            : this.listHTML(mine, 'まだポストがありません。');
     }
 
     renderThread() {
@@ -497,7 +534,22 @@ class App {
         const me = this.getUser(this.me.uid);
         $('edit-name').value = me.username;
         $('edit-bio').value = me.bio || '';
+        this.editAvatar = undefined; // undefined=変更なし / ''=削除 / dataURL=新しい画像
+        $('edit-avatar-preview').src = me.avatar;
+        $('edit-avatar-file').value = '';
         $('edit-profile-modal').classList.add('active');
+    }
+
+    async onAvatarSelected(file) {
+        if (!file) return;
+        if (!file.type.startsWith('image/')) return this.toast('画像ファイルを選択してください');
+        try {
+            this.editAvatar = await resizeImage(file, 256);
+            $('edit-avatar-preview').src = this.editAvatar;
+        } catch (err) {
+            console.error(err);
+            this.toast('この画像は読み込めませんでした（JPEG / PNG を推奨）');
+        }
     }
 
     saveProfile() {
@@ -505,7 +557,9 @@ class App {
         const bio = $('edit-bio').value.trim();
         if (!username) return alert('名前を入力してください。');
         const me = this.getUser(this.me.uid);
-        setDoc(doc(db, 'users', this.me.uid), { username, bio, handle: me.handle }, { merge: true })
+        const data = { username, bio, handle: me.handle };
+        if (this.editAvatar !== undefined) data.avatar = this.editAvatar;
+        setDoc(doc(db, 'users', this.me.uid), data, { merge: true })
             .catch(err => this.writeError(err));
         this.closeModals();
         this.toast('プロフィールを保存しました');
